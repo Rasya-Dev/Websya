@@ -373,7 +373,7 @@
                         <i class="fas fa-comment-dots option-icon"></i>
                         <h2 class="option-title">WA CHAT</h2>
                         <p class="option-desc">Chat langsung dengan saya</p>
-                        <button class="btn" data-type="chat">
+                        <button class="btn" id="chatBtn" data-type="chat">
                             <i class="fab fa-whatsapp"></i> Buka Chat
                         </button>
                     </div>
@@ -381,7 +381,7 @@
                         <i class="fas fa-user-astronaut option-icon"></i>
                         <h2 class="option-title">Chat Pribadi</h2>
                         <p class="option-desc">wa aja</p>
-                        <button class="btn" data-type="chat">
+                        <button class="btn" id="chatBtnBack" data-type="chat">
                             <i class="fab fa-whatsapp"></i> Mulai
                         </button>
                     </div>
@@ -395,7 +395,7 @@
                         <i class="fas fa-broadcast-tower option-icon"></i>
                         <h2 class="option-title">WA CHANNEL</h2>
                         <p class="option-desc">Gabung channel</p>
-                        <button class="btn" data-type="channel">
+                        <button class="btn" id="channelBtn" data-type="channel">
                             <i class="fab fa-whatsapp"></i> Gabung
                         </button>
                     </div>
@@ -403,7 +403,7 @@
                         <i class="fas fa-satellite option-icon"></i>
                         <h2 class="option-title">Update Terbaru</h2>
                         <p class="option-desc">Dapatkan info langsung</p>
-                        <button class="btn" data-type="channel">
+                        <button class="btn" id="channelBtnBack" data-type="channel">
                             <i class="fab fa-whatsapp"></i> Bergabung
                         </button>
                     </div>
@@ -461,7 +461,7 @@
         };
         
         // ===========================
-        // KODE UTAMA - DIPERBAIKI
+        // KODE UTAMA - DIPERBAIKI UNTUK MOBILE
         // ===========================
         
         // Inisialisasi
@@ -522,62 +522,102 @@
         // Atur sumber musik
         bgMusic.src = MUSIC_URL;
         
-        // Event untuk tombol WhatsApp - DIPERBAIKI
-        document.querySelectorAll('.btn').forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.stopPropagation(); // Mencegah event bubbling
-                
-                const type = this.getAttribute('data-type');
-                const config = WA_CONFIG[type];
-                
-                console.log(`Tombol ${type} ditekan`); // Debug
-                
-                // Update teks berdasarkan tipe
-                loadingText.textContent = type === 'chat' ? 'Membuka Chat WhatsApp...' : 'Membuka Channel WhatsApp...';
-                
-                // Tampilkan layar transisi
-                transitionScreen.classList.add('active');
-                
-                // Mulai loading bar
-                setTimeout(() => {
-                    loadingProgress.style.width = '100%';
-                }, 100);
-                
-                // Countdown
-                let countdown = 5;
+        // Fungsi untuk membuka WhatsApp
+        function openWhatsApp(type) {
+            console.log(`Membuka WhatsApp ${type}`); // Debug
+            
+            const config = WA_CONFIG[type];
+            
+            // Update teks berdasarkan tipe
+            loadingText.textContent = type === 'chat' ? 'Membuka Chat WhatsApp...' : 'Membuka Channel WhatsApp...';
+            
+            // Tampilkan layar transisi
+            transitionScreen.classList.add('active');
+            
+            // Mulai loading bar
+            setTimeout(() => {
+                loadingProgress.style.width = '100%';
+            }, 100);
+            
+            // Countdown
+            let countdown = 5;
+            countdownElement.textContent = countdown;
+            
+            const countdownInterval = setInterval(() => {
+                countdown--;
                 countdownElement.textContent = countdown;
                 
-                const countdownInterval = setInterval(() => {
-                    countdown--;
-                    countdownElement.textContent = countdown;
-                    
-                    if (countdown <= 0) {
-                        clearInterval(countdownInterval);
-                        
-                        // Redirect sesuai tipe
-                        if (type === 'chat') {
-                            // Untuk chat: format nomor menjadi +62
-                            const formattedPhone = config.phone.startsWith('+') ? config.phone : `+${config.phone}`;
-                            const encodedMessage = encodeURIComponent(config.message);
-                            const whatsappURL = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
-                            
-                            console.log(`Redirect ke: ${whatsappURL}`); // Debug
-                            window.location.href = whatsappURL;
-                        } else {
-                            // Untuk channel: langsung ke URL channel
-                            console.log(`Redirect ke: ${config.url}`); // Debug
-                            window.location.href = config.url;
-                        }
-                    }
-                }, 1000);
-                
-                // Opsi untuk membatalkan
-                transitionScreen.addEventListener('click', function cancelRedirect() {
+                if (countdown <= 0) {
                     clearInterval(countdownInterval);
-                    transitionScreen.classList.remove('active');
-                    loadingProgress.style.width = '0%';
-                    transitionScreen.removeEventListener('click', cancelRedirect);
-                });
+                    
+                    // Redirect sesuai tipe
+                    if (type === 'chat') {
+                        // Untuk chat: format nomor menjadi +62
+                        const formattedPhone = config.phone.startsWith('+') ? config.phone : `+${config.phone}`;
+                        const encodedMessage = encodeURIComponent(config.message);
+                        const whatsappURL = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+                        
+                        console.log(`Redirect ke WhatsApp Chat: ${whatsappURL}`); // Debug
+                        
+                        // Gunakan window.open untuk mobile compatibility
+                        setTimeout(() => {
+                            window.location.href = whatsappURL;
+                        }, 100);
+                    } else {
+                        // Untuk channel: langsung ke URL channel
+                        console.log(`Redirect ke WhatsApp Channel: ${config.url}`); // Debug
+                        
+                        // Gunakan window.open untuk mobile compatibility
+                        setTimeout(() => {
+                            window.location.href = config.url;
+                        }, 100);
+                    }
+                }
+            }, 1000);
+            
+            // Opsi untuk membatalkan
+            transitionScreen.addEventListener('click', function cancelRedirect(event) {
+                event.stopPropagation();
+                clearInterval(countdownInterval);
+                transitionScreen.classList.remove('active');
+                loadingProgress.style.width = '0%';
+                transitionScreen.removeEventListener('click', cancelRedirect);
+            }, { once: true });
+        }
+        
+        // Event untuk tombol WhatsApp - METODE YANG LEBIH SIMPLE
+        document.getElementById('chatBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openWhatsApp('chat');
+        });
+        
+        document.getElementById('chatBtnBack').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openWhatsApp('chat');
+        });
+        
+        document.getElementById('channelBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openWhatsApp('channel');
+        });
+        
+        document.getElementById('channelBtnBack').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openWhatsApp('channel');
+        });
+        
+        // Juga tambahkan event untuk card jika ingin
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Mencegah card mengganggu button
+                if (!e.target.closest('.btn')) {
+                    const type = this.querySelector('.btn').getAttribute('data-type');
+                    openWhatsApp(type);
+                }
             });
         });
         
@@ -599,6 +639,8 @@
             
             // Debug: cek jika tombol terdeteksi
             console.log(`Jumlah tombol ditemukan: ${document.querySelectorAll('.btn').length}`);
+            console.log(`Tombol Chat: ${document.getElementById('chatBtn') ? 'Ditemukan' : 'Tidak ditemukan'}`);
+            console.log(`Tombol Channel: ${document.getElementById('channelBtn') ? 'Ditemukan' : 'Tidak ditemukan'}`);
         });
         
         // Error handling untuk musik
@@ -606,6 +648,28 @@
             console.error("Gagal memuat musik. Periksa URL musik di konfigurasi.");
         });
         
-        // Efek hover card 3D
-        document.querySelectorAll('.card').forEach(card => {
-        
+        // Efek hover card 3D (hanya untuk desktop)
+        if (window.innerWidth > 768) {
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('mousemove', function(e) {
+                    const cardRect = this.getBoundingClientRect();
+                    const cardCenterX = cardRect.left + cardRect.width / 2;
+                    const cardCenterY = cardRect.top + cardRect.height / 2;
+                    
+                    const mouseX = e.clientX - cardCenterX;
+                    const mouseY = e.clientY - cardCenterY;
+                    
+                    const rotateY = mouseX / 50;
+                    const rotateX = -mouseY / 50;
+                    
+                    this.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg) translateY(-10px)`;
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'rotateY(0) rotateX(0) translateY(0)';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
